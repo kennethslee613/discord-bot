@@ -1,7 +1,31 @@
 let Discord = require('discord.io');
 let auth = require('./auth.json');
+let fs = require('fs');
+let Lobby = require('./Lobby');
+let Player = require('./Player');
 
-let lobbies = {};
+let lobbies;
+
+fs.readFile('lobbies.json', 'utf8', (err, jsonContent) => {
+    if (err) {
+        console.log('File read failed:', err);
+        lobbies = {};
+    } else {
+        try {
+            lobbies = JSON.parse(jsonContent);
+            Object.entries(lobbies).map(([key, value]) => {
+                let players = value.players.map((player) => {
+                    return new Player(player.user, player.userID);
+                });
+                lobbies[key] = new Lobby(value.name, players, value.limit);
+            });
+            console.log('Parse successful. Lobby object:\n', lobbies);
+        } catch (err) {
+            console.log('JSON parse failed:', err);
+            lobbies = {};
+        }
+    }
+});
 
 let bot = new Discord.Client({
     autorun: true,
@@ -12,51 +36,6 @@ let sendMessage = (channelID, message) => {
         to: channelID,
         message: message
     });
-}
-
-class Player {
-    constructor(user, userID) {
-        this.user = user;
-        this.userID = userID;
-    }
-}
-
-class Lobby {
-    constructor(name, player) {
-        this.name = name;
-        this.players = [player];
-        this.limit = 1;
-    }
-
-    setLimit(limit) {
-        this.limit = limit;
-    }
-
-    playerInLobby(player) {
-        let inLobby = false;
-        this.players.map((p) => {
-            if (p.userID === player.userID) {
-                inLobby = true;
-            }
-        });
-        return inLobby;
-    }
-
-    isFull() {
-        return this.limit < this.players.length;
-    }
-
-    addPlayer(player) {
-        this.players.push(player);
-    }
-
-    removePlayer(player) {
-        this.players = this.players.filter((p) => p.userID !== player.userID);
-    }
-
-    toString() {
-        return `${this.name} (${this.players.length}/${this.limit})`;
-    }
 }
 
 bot.on('ready', (event) => {
@@ -86,7 +65,7 @@ bot.on('message', (user, userID, channelID, message, event) => {
             case 'create':
                 if (arg.length >= 1) {
                     if (!lobbies[arg]) {
-                        let newLobby = new Lobby(arg, player);
+                        let newLobby = new Lobby(arg, [player]);
                         lobbies[arg] = newLobby;
                         sendMessage(channelID, `**${arg}** has been created.\nSet the lobby limit with **--limit <name> <limit>**`);
                     } else {
@@ -223,5 +202,10 @@ bot.on('message', (user, userID, channelID, message, event) => {
                 }
                 break;
         }
+        fs.writeFile('lobbies.json', JSON.stringify(lobbies), (error) => {
+            if (error) {
+                console.log(error);
+            }
+        });
     }
 });
