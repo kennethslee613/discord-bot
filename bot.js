@@ -209,3 +209,9 @@ bot.on('message', (user, userID, channelID, message, event) => {
         });
     }
 });
+
+bot.on('disconnect', (err) => {
+    console.log('Disconnected:', err);
+    console.log('Reconnecting...');
+    bot.connect();
+});
