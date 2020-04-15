@@ -1,0 +1,10 @@
+{
+  "name": "sophia",
+  "version": "1.0.0",
+  "description": "Confirms players are ready and splits into teams",
+  "main": "bot.js",
+  "author": "Kenneth Lee",
+  "dependencies": {
+    "discord.io": "github:woor/discord.io#gateway_v6"
+  }
+}
