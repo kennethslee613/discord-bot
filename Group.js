@@ -1,22 +1,23 @@
-module.exports = class Lobby {
-    constructor(name, players, limit=1) {
+module.exports = class Group {
+    constructor(name, players, limit=1, type='lobby') {
         this.name = name;
         this.players = players;
         this.limit = limit;
+        this.type = type;
     }
 
     setLimit(limit) {
         this.limit = limit;
     }
 
-    playerInLobby(player) {
-        let inLobby = false;
+    isPlayerInGroup(player) {
+        let inGroup = false;
         this.players.map((p) => {
             if (p.userID === player.userID) {
-                inLobby = true;
+                inGroup = true;
             }
         });
-        return inLobby;
+        return inGroup;
     }
 
     isFull() {
@@ -33,5 +34,9 @@ module.exports = class Lobby {
 
     toString() {
         return `${this.name} (${this.players.length}/${this.limit})`;
+    }
+
+    getType() {
+        return this.type;
     }
 }
