@@ -79,8 +79,8 @@ async function runBot() {
                         + `**${symbol}lobbies**: Lists all available lobbies.\n`
                         + `**${symbol}ping-game**: @'s the followers of a game.\n`
                         + `**${symbol}ping-lobby**: @'s the players in a lobby.\n`
-                        + `**${symbol}players <name>**: Lists the players that are in the lobby.`
-                        + `**${symbol}unfollow <name>**: Unfollow a game.\n`
+                        + `**${symbol}players <name>**: Lists the players that are in the lobby.\n`
+                        + `**${symbol}unfollow <name>**: Unfollow a game.`
                     );
                     break;
                 case 'create':
