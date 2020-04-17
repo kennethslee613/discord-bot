@@ -4,6 +4,11 @@ let fs = require('fs');
 let Group = require('./Group');
 let Player = require('./Player');
 
+let bot = new Discord.Client({
+    autorun: true,
+    token: auth.token
+});
+
 function readFile() {
     let groups;
     return new Promise((resolve, reject) => {
@@ -34,21 +39,18 @@ function readFile() {
     });
 }
 
-async function main() {
+function sendMessage(channelID, message) {
+    bot.sendMessage({
+        to: channelID,
+        message: message
+    });
+}
+
+async function runBot() {
     let groups = await readFile();
     let lobbies = groups.lobbies;
     let games = groups.games;
-
-    let bot = new Discord.Client({
-        autorun: true,
-        token: auth.token
-    });
-    let sendMessage = (channelID, message) => {
-        bot.sendMessage({
-            to: channelID,
-            message: message
-        });
-    }
+    let symbol = auth.test ? '==' : '--';
 
     bot.on('ready', (event) => {
         console.log('Connected');
@@ -56,7 +58,7 @@ async function main() {
     });
 
     bot.on('message', (user, userID, channelID, message, event) => {
-        if (message.substring(0, 2) == '==') {
+        if (message.substring(0, 2) === symbol) {
             let args = message.substring(2).split(' ');
             let cmd = args[0];
             let arg = args.slice(1).join(' ');
@@ -65,13 +67,15 @@ async function main() {
             switch(cmd) {
                 case 'help':
                     sendMessage(channelID, '__Commands__:\n'
-                        + '**==create <name>**: Creates a new lobby.\n'
-                        + '**==delete <name>**: Deletes an existing lobby.\n'
-                        + '**==join <name>**: Join the lobby.\n'
-                        + '**==leave <name>**: Leave the lobby.\n'
-                        + '**==limit <name> <limit>**: Sets the limit for lobby.\n'
-                        + '**==list**: Lists all available lobbies.\n'
-                        + '**==players <name>**: Lists the players that are in the lobby.'
+                        + `**${symbol}add <name>**: Adds a new game.\n`
+                        + `**${symbol}create <name>**: Creates a new lobby.\n`
+                        + `**${symbol}delete <name>**: Deletes an existing lobby.\n`
+                        + `**${symbol}games**: Lists all available games.\n`
+                        + `**${symbol}join <name>**: Join the lobby.\n`
+                        + `**${symbol}leave <name>**: Leave the lobby.\n`
+                        + `**${symbol}limit <name> <limit>**: Sets the limit for lobby.\n`
+                        + `**${symbol}lobbies**: Lists all available lobbies.\n`
+                        + `**${symbol}players <name>**: Lists the players that are in the lobby.`
                     );
                     break;
                 case 'create':
@@ -79,7 +83,7 @@ async function main() {
                         if (!lobbies[arg]) {
                             let newGroup = new Group(arg, [player]);
                             lobbies[arg] = newGroup;
-                            sendMessage(channelID, `**${arg}** has been created.\nSet the lobby limit with **==limit <name> <limit>**`);
+                            sendMessage(channelID, `**${arg}** has been created.\nSet the lobby limit with **${symbol}limit <name> <limit>**`);
                         } else {
                             sendMessage(channelID, 'A lobby with this name already exists.');
                         }
@@ -118,7 +122,7 @@ async function main() {
                         sendMessage(channelID, 'The lobby does not exist.');
                     }
                     break;
-                case 'list':
+                case 'lobbies':
                     let list = '__Lobbies__:';
                     if (Object.values(lobbies).length > 0) {
                         Object.values(lobbies).map((lobby) => {
@@ -213,6 +217,30 @@ async function main() {
                         sendMessage(channelID, 'Please enter a lobby name.');
                     }
                     break;
+                case 'add':
+                    if (arg.length >= 1) {
+                        if (!games[arg]) {
+                            let newGroup = new Group(arg, [player], 0, 'game');
+                            games[arg] = newGroup;
+                            sendMessage(channelID, `Game **${arg}** has been added.`);
+                        } else {
+                            sendMessage(channelID, 'A game with this name already exists.');
+                        }
+                    } else {
+                        sendMessage(channelID, 'Please enter a game name.');
+                    }
+                    break;
+                case 'games':
+                    let gameList = '__Games__:';
+                    if (Object.values(games).length > 0) {
+                        Object.values(games).map((game) => {
+                            gameList += '\n' + game.toString();
+                        });
+                    } else {
+                        gameList += '\nNo games'
+                    }
+                    sendMessage(channelID, gameList);
+                    break;
             }
             groups = { 'lobbies': lobbies, 'games': games };
             fs.writeFile('groups.json', JSON.stringify(groups), (error) => {
@@ -230,4 +258,4 @@ async function main() {
     });
 }
 
-main();
+runBot();

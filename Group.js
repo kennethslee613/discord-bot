@@ -1,5 +1,5 @@
 module.exports = class Group {
-    constructor(name, players, limit=1, type='lobby') {
+    constructor(name, players, limit=5, type='lobby') {
         this.name = name;
         this.players = players;
         this.limit = limit;
@@ -33,7 +33,11 @@ module.exports = class Group {
     }
 
     toString() {
-        return `${this.name} (${this.players.length}/${this.limit})`;
+        if (this.type === 'lobby') {
+            return `${this.name} (${this.players.length}/${this.limit})`;
+        } else if (this.type === 'game') {
+            return `${this.name} (${this.players.length} player${this.players.length === 1 ? '' : 's'})`;
+        }
     }
 
     getType() {
