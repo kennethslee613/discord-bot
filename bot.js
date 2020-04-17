@@ -67,15 +67,20 @@ async function runBot() {
             switch(cmd) {
                 case 'help':
                     sendMessage(channelID, '__Commands__:\n'
-                        + `**${symbol}add <name>**: Adds a new game.\n`
                         + `**${symbol}create <name>**: Creates a new lobby.\n`
+                        + `**${symbol}create-game <name>**: Creates a new game.\n`
                         + `**${symbol}delete <name>**: Deletes an existing lobby.\n`
+                        + `**${symbol}delete-game <name>**: Deletes an existing game.\n`
+                        + `**${symbol}follow <name>**: Follow a game.\n`
                         + `**${symbol}games**: Lists all available games.\n`
-                        + `**${symbol}join <name>**: Join the lobby.\n`
-                        + `**${symbol}leave <name>**: Leave the lobby.\n`
+                        + `**${symbol}join <name>**: Join a lobby.\n`
+                        + `**${symbol}leave <name>**: Leave a lobby.\n`
                         + `**${symbol}limit <name> <limit>**: Sets the limit for lobby.\n`
                         + `**${symbol}lobbies**: Lists all available lobbies.\n`
+                        + `**${symbol}ping-game**: @'s the followers of a game.\n`
+                        + `**${symbol}ping-lobby**: @'s the players in a lobby.\n`
                         + `**${symbol}players <name>**: Lists the players that are in the lobby.`
+                        + `**${symbol}unfollow <name>**: Unfollow a game.\n`
                     );
                     break;
                 case 'create':
@@ -83,7 +88,9 @@ async function runBot() {
                         if (!lobbies[arg]) {
                             let newGroup = new Group(arg, [player]);
                             lobbies[arg] = newGroup;
-                            sendMessage(channelID, `**${arg}** has been created.\nSet the lobby limit with **${symbol}limit <name> <limit>**`);
+                            sendMessage(channelID, `**${arg}** has been created.`
+                                + `Set the lobby limit with **${symbol}limit <name> <limit>** (default limit is 5).`
+                                + `Ping players following a game with **${symbol}ping-game <name>**`);
                         } else {
                             sendMessage(channelID, 'A lobby with this name already exists.');
                         }
@@ -198,7 +205,7 @@ async function runBot() {
                         sendMessage(channelID, 'Please enter a lobby name.');
                     }
                     break;
-                case 'ping':
+                case 'ping-lobby':
                     if (arg.length >= 1) {
                         if (lobbies[arg]) {
                             let ping = 'Pinging...';
@@ -217,12 +224,12 @@ async function runBot() {
                         sendMessage(channelID, 'Please enter a lobby name.');
                     }
                     break;
-                case 'add':
+                case 'create-game':
                     if (arg.length >= 1) {
                         if (!games[arg]) {
                             let newGroup = new Group(arg, [player], 0, 'game');
                             games[arg] = newGroup;
-                            sendMessage(channelID, `Game **${arg}** has been added.`);
+                            sendMessage(channelID, `Game **${arg}** has been created.`);
                         } else {
                             sendMessage(channelID, 'A game with this name already exists.');
                         }
@@ -240,6 +247,88 @@ async function runBot() {
                         gameList += '\nNo games'
                     }
                     sendMessage(channelID, gameList);
+                    break;
+                case 'delete-game':
+                    if (arg.length >= 1) {
+                        if (games[arg]) {
+                            delete games[arg];
+                            sendMessage(channelID, `Game **${arg}** has been deleted.`);
+                        } else {
+                            sendMessage(channelID, 'The game does not exist.');
+                        }
+                    } else {
+                        sendMessage(channelID, 'Please enter a game name.');
+                    }
+                    break;
+                case 'followers':
+                    if (arg.length >= 1) {
+                        if (games[arg]) {
+                            let list = `__Followers in **${arg}**__:`
+                            if (games[arg].players.length > 0) {
+                                games[arg].players.map((player) => {
+                                    list += '\n' + player.user;
+                                });
+                            } else {
+                                list += '\nNo followers';
+                            }
+                            sendMessage(channelID, list);
+                        } else {
+                            sendMessage(channelID, 'The game does not exist.');
+                        }
+                    } else {
+                        sendMessage(channelID, 'Please enter a game name.');
+                    }
+                    break;
+                case 'follow':
+                    if (arg.length >= 1) {
+                        if (games[arg]) {
+                            if (games[arg].isPlayerInGroup(player)) {
+                                sendMessage(channelID, `You are already following **${arg}**.`);
+                            } else {
+                                games[arg].addPlayer(player);
+                                sendMessage(channelID, `You are now following **${arg}**.`);
+                            }
+                        } else {
+                            sendMessage(channelID, 'The game does not exist.');
+                        }
+                    } else {
+                        sendMessage(channelID, 'Please enter a game name.');
+                    }
+                    break;
+                case 'unfollow':
+                    if (arg.length >= 1) {
+                        if (games[arg]) {
+                            if (games[arg].isPlayerInGroup(player)) {
+                                games[arg].removePlayer(player);
+                                sendMessage(channelID, `You are no longer following **${arg}**.`);
+                            } else {
+                                sendMessage(channelID, `You are not following **${arg}**.`);
+                            }
+                        } else {
+                            sendMessage(channelID, 'The game does not exist.');
+                        }
+                    } else {
+                        sendMessage(channelID, 'Please enter a game name.');
+                    }
+                    break;
+                case 'ping-game':
+                    if (arg.length >= 1) {
+                        if (games[arg]) {
+                            let ping = 'Pinging...\n';
+                            if (games[arg].players.length > 0) {
+                                games[arg].players.map((player) => {
+                                    ping += `<@${player.userID}> `;
+                                });
+                            } else {
+                                ping += 'There are no followers to ping.';
+                            }
+                            sendMessage(channelID, ping);
+                        } else {
+                            sendMessage(channelID, 'The game does not exist.');
+                        }
+                    } else {
+                        sendMessage(channelID, 'Please enter a game name.');
+                    }
                     break;
             }
             groups = { 'lobbies': lobbies, 'games': games };
